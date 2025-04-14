@@ -3,35 +3,33 @@ package controller
 import (
 	"encoding/json"
 	"myapp/app/model"
+	"myapp/app/utils/httpResp"
 	"net/http"
 )
 
 func AddStudent(w http.ResponseWriter, r *http.Request) {
+	// create variable type Student
 	var stud model.Student
 
+	// read the request body and create a decoder object
 	decoder := json.NewDecoder(r.Body)
+
+	// store the json object data to stud variable
 	if err := decoder.Decode(&stud); err != nil {
-		response, _ := json.Marshal(map[string]string{"error": "invalid json body"})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response)
+		httpResp.RespondWithError(w, http.StatusBadRequest, "Invalid json Body")
 		return
 	}
 
+	// defer the closing of request body until the function returns
 	defer r.Body.Close()
 
+	// call the Create() using student object, stud
 	saveErr := stud.Create()
 	if saveErr != nil {
-		response, _ := json.Marshal(map[string]string{"error": saveErr.Error()})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response)
+		httpResp.RespondWithError(w, http.StatusBadRequest, saveErr.Error())
 		return
 	}
 
-	// no error, success case
-	response, _ := json.Marshal(map[string]string{"status": "student added"})
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
+	// no error
+	httpResp.RespondWithJSON(w, http.StatusCreated, map[string]string{"status": "Student Added"})
 }
