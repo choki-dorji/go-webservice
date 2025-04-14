@@ -68,3 +68,33 @@ func GetStdu(w http.ResponseWriter, r *http.Request) {
 	httpResp.RespondWithJSON(w, http.StatusOK, s)
 
 }
+
+//to update
+
+func UpdateStud(w http.ResponseWriter, r *http.Request) {
+	old_sid := mux.Vars(r)["sid"]
+	old_stdid, idErr := getUserId(old_sid)
+	if idErr != nil {
+		httpResp.RespondWithError(w, http.StatusBadRequest, idErr.Error())
+		return
+	}
+	var stud model.Student
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&stud); err != nil {
+		httpResp.RespondWithError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+	defer r.Body.Close()
+	UpdateErr := stud.Update(old_stdid)
+	if UpdateErr != nil {
+		switch UpdateErr {
+		case sql.ErrNoRows:
+			httpResp.RespondWithError(w, http.StatusNotFound, "student not found")
+		default:
+			httpResp.RespondWithError(w, http.StatusInternalServerError, UpdateErr.Error())
+
+		}
+	} else {
+		httpResp.RespondWithJSON(w, http.StatusOK, stud)
+	}
+}
