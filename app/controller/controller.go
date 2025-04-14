@@ -1,10 +1,14 @@
 package controller
 
 import (
+	"database/sql"
 	"encoding/json"
 	"myapp/app/model"
 	"myapp/app/utils/httpResp"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func AddStudent(w http.ResponseWriter, r *http.Request) {
@@ -32,4 +36,35 @@ func AddStudent(w http.ResponseWriter, r *http.Request) {
 
 	// no error
 	httpResp.RespondWithJSON(w, http.StatusCreated, map[string]string{"status": "Student Added"})
+}
+
+// reuable
+func getUserId(userIdParam string) (int64, error) {
+	userId, userErr := strconv.ParseInt(userIdParam, 10, 64)
+	if userErr != nil {
+		return 0, userErr
+	}
+	return userId, nil
+}
+
+func GetStdu(w http.ResponseWriter, r *http.Request) {
+	sid := mux.Vars(r)["sid"]
+	stdId, idErr := getUserId(sid)
+	if idErr != nil {
+		httpResp.RespondWithError(w, http.StatusBadRequest, idErr.Error())
+		return
+	}
+	s := model.Student{StdId: stdId}
+	getErr := s.Read()
+	if getErr != nil {
+		switch getErr {
+		case sql.ErrNoRows:
+			httpResp.RespondWithError(w, http.StatusNotFound, "student not found")
+		default:
+			httpResp.RespondWithError(w, http.StatusInternalServerError, getErr.Error())
+		}
+		return
+	}
+	httpResp.RespondWithJSON(w, http.StatusOK, s)
+
 }
