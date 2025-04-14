@@ -98,3 +98,19 @@ func UpdateStud(w http.ResponseWriter, r *http.Request) {
 		httpResp.RespondWithJSON(w, http.StatusOK, stud)
 	}
 }
+
+// TO DELERE USER
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	sid := mux.Vars(r)["sid"]
+	stdid, idErr := getUserId(sid)
+	if idErr != nil {
+		httpResp.RespondWithError(w, http.StatusBadRequest, idErr.Error())
+		return
+	}
+	s := model.Student{StdId: stdid}
+	if err := s.Delete(); err != nil {
+		httpResp.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	httpResp.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
